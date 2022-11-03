@@ -23,7 +23,6 @@ class ConversationAPIView(APIView):
     def get(self, request, format=None):
         # simply delete the token to force a login
         queryset = self.get_queryset()
-        print(self.request.user)
         serializer = ConversationSerializer(queryset, many=True, user=self.request.user)
         return Response(serializer.data)
 

@@ -55,7 +55,6 @@ class ConversationSerializer(serializers.ModelSerializer):
         return MessageSerializer(message).data
 
     def get_other_user(self, obj, *args, **kwargs):
-        print(self.user, "dflkjfdlslkjflksdj")
         usernames = obj.name.split("__")
         for username in usernames:
             if username != self.user.username:
