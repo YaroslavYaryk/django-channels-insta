@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from decouple import config
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
@@ -28,6 +29,15 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = get_user_model()
-        fields = ("id", "username", "email", "first_name", "last_name")
+        fields = ("id", "username", "email", "first_name", "last_name", "image")
+
+    def get_image(self, instance):
+        try:
+            return f"{config('HOST')}:{config('PORT')}{instance.image.url}"
+        except:
+            return None

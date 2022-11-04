@@ -100,6 +100,9 @@ TEMPLATES = [
 WSGI_APPLICATION = "django_chat.wsgi.application"
 ASGI_APPLICATION = "django_chat.asgi.application"
 
+AUTH_USER_MODEL = "users.User"
+
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",

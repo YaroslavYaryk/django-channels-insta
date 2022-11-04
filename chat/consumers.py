@@ -6,6 +6,8 @@ from chat.api.serializers import MessageSerializer
 import json
 from uuid import UUID
 
+from .services import handle_chat
+
 User = get_user_model()
 
 
@@ -115,6 +117,7 @@ class ChatConsumer(JsonWebsocketConsumer):
             )
 
         if message_type == "chat_message":
+            print("chat_message")
 
             message = Message.objects.create(
                 from_user=self.user,
@@ -122,6 +125,12 @@ class ChatConsumer(JsonWebsocketConsumer):
                 content=content["message"],
                 conversation=self.conversation,
             )
+
+            if content["fileBase64"]:
+                message.image = handle_chat.get_file_instance_from_base64(
+                    content["fileBase64"]
+                )
+                message.save()
 
             async_to_sync(self.channel_layer.group_send)(
                 self.conversation_name,
@@ -161,15 +170,10 @@ class ChatConsumer(JsonWebsocketConsumer):
 
             # messages = self.conversation.messages.all().order_by("-timestamp")[0:30]
             # message_count = self.conversation.messages.all().count()
-
-            # async_to_sync(self.channel_layer.group_send)(
-            #     self.conversation_name,
-            #     {
-            #         "type": "last_30_messages",
-            #         "messages": MessageSerializer(messages, many=True).data,
-            #         "has_more": message_count > 30,
-            #     },
-            # )
+            async_to_sync(self.channel_layer.group_send)(
+                self.conversation_name,
+                {"type": "read_messages", "user": self.user.username},
+            )
 
             # Update the unread message count
             unread_count = Message.objects.filter(to_user=self.user, read=False).count()
@@ -194,18 +198,20 @@ class ChatConsumer(JsonWebsocketConsumer):
                     )
                 ]
             )
-
-            message = self.conversation.messages.all().order_by("-timestamp")[0]
-            async_to_sync(self.channel_layer.group_send)(
-                "conversations",
-                {
-                    "type": "unread_messages",
-                    "unread_messages": unread_messages,
-                    "user": self.user.username,
-                    "name": self.conversation.name,
-                    "message": MessageSerializer(message).data,
-                },
-            )
+            try:
+                message = self.conversation.messages.all().order_by("-timestamp")[0]
+                async_to_sync(self.channel_layer.group_send)(
+                    "conversations",
+                    {
+                        "type": "unread_messages",
+                        "unread_messages": unread_messages,
+                        "user": self.user.username,
+                        "name": self.conversation.name,
+                        "message": MessageSerializer(message).data,
+                    },
+                )
+            except:
+                pass
 
         return super().receive_json(content, **kwargs)
 
@@ -231,6 +237,9 @@ class ChatConsumer(JsonWebsocketConsumer):
         self.send_json(event)
 
     def unread_messages(self, event):
+        self.send_json(event)
+
+    def read_messages(self, event):
         self.send_json(event)
 
     @classmethod
@@ -281,6 +290,15 @@ class ConversationConsumer(JsonWebsocketConsumer):
             },
         )
 
+        for group in Conversation.objects.filter(name__contains=self.user.username):
+            async_to_sync(self.channel_layer.group_send)(
+                group.name,
+                {
+                    "type": "user_join",
+                    "user": self.user.username,
+                },
+            )
+
         for conversation in Conversation.objects.filter(
             name__contains=self.user.username
         ):
@@ -318,6 +336,16 @@ class ConversationConsumer(JsonWebsocketConsumer):
                     "user": self.user.username,
                 },
             )
+
+            for group in Conversation.objects.filter(name__contains=self.user.username):
+                async_to_sync(self.channel_layer.group_send)(
+                    group.name,
+                    {
+                        "type": "user_leave",
+                        "user": self.user.username,
+                    },
+                )
+
         print("disconnect")
         for conversation in Conversation.objects.filter(
             name__contains=self.user.username
@@ -329,7 +357,6 @@ class ConversationConsumer(JsonWebsocketConsumer):
     def receive_json(self, content, **kwargs):
         message_type = content["type"]
 
-        print(message_type)
         return super().receive_json(content, **kwargs)
 
     def user_join(self, event):

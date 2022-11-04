@@ -55,7 +55,7 @@ class LogoutUserAPIView(APIView):
 
 class UserAPIView(APIView):
     def get_queryset(self):
-        queryset = get_user_model().objects.all()
+        queryset = get_user_model().objects.all().exclude(id=self.request.user.id)
         return queryset
 
     def get(self, request, format=None):

@@ -30,6 +30,11 @@ class ConversationAPIView(APIView):
 class ConversationBaseAPIView(APIView):
     def get(self, request, conversation_name):
         # simply delete the token to force a login
+
+        participants = conversation_name.split("__")
+        if participants[0] != participants[1]:
+            Conversation.objects.get_or_create(name=conversation_name)
+
         queryset = Conversation.objects.filter(name=conversation_name)
         serializer = ConversationSerializer(queryset, many=True, user=self.request.user)
         try:

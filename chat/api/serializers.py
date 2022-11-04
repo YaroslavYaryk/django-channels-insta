@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from decouple import config
 from chat.models import Message, Conversation
 from users.api.serializers import UserSerializer
 
@@ -12,6 +12,7 @@ class MessageSerializer(serializers.ModelSerializer):
     from_user = UserSerializer()
     to_user = UserSerializer()
     conversation = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
@@ -20,6 +21,7 @@ class MessageSerializer(serializers.ModelSerializer):
             "conversation",
             "from_user",
             "to_user",
+            "image",
             "content",
             "timestamp",
             "read",
@@ -27,6 +29,12 @@ class MessageSerializer(serializers.ModelSerializer):
 
     def get_conversation(self, obj):
         return str(obj.conversation.id)
+
+    def get_image(self, instance):
+        try:
+            return f"{config('HOST')}:{config('PORT')}{instance.image.url}"
+        except:
+            return None
 
     # def get_from_user(self, obj):
     #     return UserSerializer(obj.from_user).data
