@@ -15,11 +15,22 @@ from .serializers import CreateUserSerializer, UserSerializer
 
 class CustomObtainAuthTokenView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data["user"]
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({"token": token.key, "username": user.username})
+        message = ""
+        serializer = ""
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            user = serializer.validated_data["user"]
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({"token": token.key, "username": user.username})
+
+        except Exception as err:
+            message = "\n".join(
+                [el.title() for values in serializer.errors.values() for el in values]
+            )
+            print(err)
+            return Response({"message": message}, status.HTTP_401_UNAUTHORIZED)
 
 
 class CreateUserAPIView(CreateAPIView):
@@ -27,6 +38,7 @@ class CreateUserAPIView(CreateAPIView):
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
+        print(request.data)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=False)
         try:
@@ -40,7 +52,7 @@ class CreateUserAPIView(CreateAPIView):
                 status=status.HTTP_201_CREATED,
                 headers=headers,
             )
-        except IntegrityError as err:
+        except Exception as err:
             return Response({"message": str(err)}, status.HTTP_401_UNAUTHORIZED)
 
 

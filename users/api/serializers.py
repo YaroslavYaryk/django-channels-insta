@@ -4,13 +4,14 @@ from decouple import config
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
-    email = serializers.CharField()
+
     password = serializers.CharField(write_only=True, style={"input_type": "password"})
 
     class Meta:
         model = get_user_model()
         fields = (
-            "email",
+            "first_name",
+            "last_name",
             "password",
             "username",
         )

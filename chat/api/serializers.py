@@ -12,7 +12,7 @@ class MessageSerializer(serializers.ModelSerializer):
     from_user = UserSerializer()
     to_user = UserSerializer()
     conversation = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
@@ -21,7 +21,7 @@ class MessageSerializer(serializers.ModelSerializer):
             "conversation",
             "from_user",
             "to_user",
-            "image",
+            "images",
             "content",
             "timestamp",
             "read",
@@ -30,9 +30,12 @@ class MessageSerializer(serializers.ModelSerializer):
     def get_conversation(self, obj):
         return str(obj.conversation.id)
 
-    def get_image(self, instance):
+    def get_images(self, instance):
         try:
-            return f"{config('HOST')}:{config('PORT')}{instance.image.url}"
+            return [
+                f"{config('HOST')}:{config('PORT')}{img.image.url}"
+                for img in instance.images.all()
+            ]
         except:
             return None
 

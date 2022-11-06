@@ -26,6 +26,10 @@ class Conversation(models.Model):
         return f"{self.name} ({self.get_online_count()})"
 
 
+class MessageImage(models.Model):
+    image = models.ImageField(upload_to="message_images/", null=True)
+
+
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     conversation = models.ForeignKey(
@@ -37,8 +41,8 @@ class Message(models.Model):
     to_user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="messages_to_me"
     )
-    content = models.CharField(max_length=512)
-    image = models.ImageField(upload_to="message_images/", null=True)
+    content = models.CharField(max_length=512, blank=True)
+    images = models.ManyToManyField(MessageImage, verbose_name=(""), blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     read = models.BooleanField(default=False)
 

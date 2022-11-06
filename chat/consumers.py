@@ -1,7 +1,7 @@
 from channels.generic.websocket import JsonWebsocketConsumer
 from django.contrib.auth import get_user_model
 from asgiref.sync import async_to_sync
-from .models import Conversation, Message
+from .models import Conversation, Message, MessageImage
 from chat.api.serializers import MessageSerializer
 import json
 from uuid import UUID
@@ -125,11 +125,13 @@ class ChatConsumer(JsonWebsocketConsumer):
                 content=content["message"],
                 conversation=self.conversation,
             )
-
-            if content["fileBase64"]:
-                message.image = handle_chat.get_file_instance_from_base64(
-                    content["fileBase64"]
-                )
+            if content["filesBase64"]:
+                for elem in content["filesBase64"]:
+                    message.images.add(
+                        MessageImage.objects.get_or_create(
+                            image=handle_chat.get_file_instance_from_base64(elem["url"])
+                        )[0]
+                    )
                 message.save()
 
             async_to_sync(self.channel_layer.group_send)(
