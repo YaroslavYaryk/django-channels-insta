@@ -5,7 +5,8 @@ from .models import Conversation, Message, MessageImage
 from chat.api.serializers import MessageSerializer
 import json
 from uuid import UUID
-
+from datetime import datetime
+from users.api.serializers import UserSerializer
 from .services import handle_chat
 
 User = get_user_model()
@@ -81,6 +82,7 @@ class ChatConsumer(JsonWebsocketConsumer):
         )
 
     def disconnect(self, code):
+
         # if self.user.is_authenticated:  # send the leave event to the room
         #     async_to_sync(self.channel_layer.group_send)(
         #         self.conversation_name,
@@ -215,6 +217,52 @@ class ChatConsumer(JsonWebsocketConsumer):
             except:
                 pass
 
+        if message_type == "delete_message":
+
+            message_id = content["messageId"]
+            handle_chat.delete_message(message_id)
+
+            async_to_sync(self.channel_layer.group_send)(
+                self.conversation_name,
+                {"type": "delete_message", "message_id": message_id},
+            )
+
+            try:
+                message = self.conversation.messages.all().order_by("-timestamp")[0]
+                async_to_sync(self.channel_layer.group_send)(
+                    "conversations",
+                    {
+                        "type": "change_last_message",
+                        "name": self.conversation.name,
+                        "message": MessageSerializer(message).data,
+                    },
+                )
+            except:
+                pass
+
+        if message_type == "edit_message":
+            message_id = content["messageId"]
+            message = handle_chat.edit(
+                message_id, content["message"], content["filesBase64"]
+            )
+
+            async_to_sync(self.channel_layer.group_send)(
+                self.conversation_name,
+                {"type": "edit_message", "message": MessageSerializer(message).data},
+            )
+
+            try:
+                async_to_sync(self.channel_layer.group_send)(
+                    "conversations",
+                    {
+                        "type": "change_last_message",
+                        "name": self.conversation.name,
+                        "message": MessageSerializer(message).data,
+                    },
+                )
+            except:
+                pass
+
         return super().receive_json(content, **kwargs)
 
     def user_join(self, event):
@@ -242,6 +290,15 @@ class ChatConsumer(JsonWebsocketConsumer):
         self.send_json(event)
 
     def read_messages(self, event):
+        self.send_json(event)
+
+    def change_last_message(self, event):
+        self.send_json(event)
+
+    def delete_message(self, event):
+        self.send_json(event)
+
+    def edit_message(self, event):
         self.send_json(event)
 
     @classmethod
@@ -331,11 +388,16 @@ class ConversationConsumer(JsonWebsocketConsumer):
 
     def disconnect(self, code):
         if self.user.is_authenticated:  # send the leave event to the room
+
+            self.user.last_login = datetime.now()
+            self.user.save()
+
             async_to_sync(self.channel_layer.group_send)(
                 "conversations",
                 {
                     "type": "user_leave",
                     "user": self.user.username,
+                    "updated_user": UserSerializer(self.user).data,
                 },
             )
 
@@ -371,6 +433,9 @@ class ConversationConsumer(JsonWebsocketConsumer):
         self.send_json(event)
 
     def unread_messages(self, event):
+        self.send_json(event)
+
+    def change_last_message(self, event):
         self.send_json(event)
 
 
