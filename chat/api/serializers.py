@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from decouple import config
-from chat.models import Message, Conversation
+from chat.models import Message, Conversation, MessageLike
 from users.api.serializers import UserSerializer
 
 from django.contrib.auth import get_user_model
@@ -8,11 +8,29 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class MessageLikeSerializer(serializers.ModelSerializer):
+
+    user = serializers.SerializerMethodField()
+    message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MessageLike
+        fields = "message", "user"
+
+    def get_message(self, instance):
+        return str(instance.message.id)
+
+    def get_user(self, instance):
+        return instance.user.username
+
+
 class MessageSerializer(serializers.ModelSerializer):
     from_user = UserSerializer()
     to_user = UserSerializer()
     conversation = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
+    likes = serializers.SerializerMethodField()
+    parent = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
@@ -25,6 +43,9 @@ class MessageSerializer(serializers.ModelSerializer):
             "content",
             "timestamp",
             "read",
+            "edited",
+            "likes",
+            "parent",
         )
 
     def get_conversation(self, obj):
@@ -38,6 +59,17 @@ class MessageSerializer(serializers.ModelSerializer):
             ]
         except:
             return None
+
+    def get_parent(self, instance):
+        if instance.parent:
+            return str(instance.parent.id)
+
+    def get_likes(self, instance):
+        queryset = MessageLike.objects.filter(message=instance)
+        # serializer = MessageLikeSerializer(queryset, many=True)
+        # if serializer.is_valid():
+        return MessageLikeSerializer(queryset, many=True).data
+        print(serializer.errors)
 
     # def get_from_user(self, obj):
     #     return UserSerializer(obj.from_user).data

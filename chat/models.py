@@ -45,6 +45,20 @@ class Message(models.Model):
     images = models.ManyToManyField(MessageImage, verbose_name=(""), blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     read = models.BooleanField(default=False)
+    edited = models.BooleanField(default=False)
+
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return f"From {self.from_user.username} to {self.to_user.username}: {self.content} [{self.timestamp}]"
+
+
+class MessageLike(models.Model):
+
+    message = models.ForeignKey(
+        Message, verbose_name=("message"), on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_like")
+
+    def __str__(self):
+        return f"message: {self.message.content}; user: {self.user.username}"

@@ -48,6 +48,7 @@ class MessageAPIView(ListAPIView):
     serializer_class = MessageSerializer
 
     def get_queryset(self):
+        print("here")
         conversation_name = self.request.GET.get("conversation")
         queryset = (
             Message.objects.filter(
@@ -58,7 +59,7 @@ class MessageAPIView(ListAPIView):
         )
         return queryset
 
-    # def get(self, request):
-    #     queryset = self.get_queryset()
-    #     serializer = MessageSerializer(queryset, many=True)
-    #     return Response(serializer.data)
+    def get(self, request):
+        queryset = self.get_queryset()
+        serializer = MessageSerializer(queryset, many=True)
+        return Response(serializer.data)

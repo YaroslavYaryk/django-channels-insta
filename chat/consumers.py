@@ -1,13 +1,14 @@
 from channels.generic.websocket import JsonWebsocketConsumer
 from django.contrib.auth import get_user_model
 from asgiref.sync import async_to_sync
-from .models import Conversation, Message, MessageImage
-from chat.api.serializers import MessageSerializer
+from .models import Conversation, Message, MessageImage, MessageLike
+from chat.api.serializers import MessageSerializer, MessageLikeSerializer
 import json
 from uuid import UUID
 from datetime import datetime
 from users.api.serializers import UserSerializer
 from .services import handle_chat
+from users.services import handle_user
 
 User = get_user_model()
 
@@ -126,6 +127,7 @@ class ChatConsumer(JsonWebsocketConsumer):
                 to_user=self.get_receiver(),
                 content=content["message"],
                 conversation=self.conversation,
+                parent=handle_chat.get_message_parent(content.get("parent")),
             )
             if content["filesBase64"]:
                 for elem in content["filesBase64"]:
@@ -263,6 +265,37 @@ class ChatConsumer(JsonWebsocketConsumer):
             except:
                 pass
 
+        if message_type == "create_message_like":
+            message_like = MessageLike.objects.get_or_create(
+                message=handle_chat.get_message_by_id(content["messageId"]),
+                user=handle_user.get_user_by_username(content["user"]),
+            )[0]
+            async_to_sync(self.channel_layer.group_send)(
+                self.conversation_name,
+                {
+                    "type": "message_like",
+                    "message_likes": MessageLikeSerializer(
+                        handle_chat.get_likes_for_message(content["messageId"]),
+                        many=True,
+                    ).data,
+                    "message_id": content["messageId"],
+                },
+            )
+
+        if message_type == "delete_message_like":
+            handle_chat.delete_message_like(content["messageId"], self.user)
+            async_to_sync(self.channel_layer.group_send)(
+                self.conversation_name,
+                {
+                    "type": "message_like",
+                    "message_likes": MessageLikeSerializer(
+                        handle_chat.get_likes_for_message(content["messageId"]),
+                        many=True,
+                    ).data,
+                    "message_id": content["messageId"],
+                },
+            )
+
         return super().receive_json(content, **kwargs)
 
     def user_join(self, event):
@@ -299,6 +332,9 @@ class ChatConsumer(JsonWebsocketConsumer):
         self.send_json(event)
 
     def edit_message(self, event):
+        self.send_json(event)
+
+    def message_like(self, event):
         self.send_json(event)
 
     @classmethod

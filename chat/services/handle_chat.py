@@ -1,8 +1,13 @@
 import base64
 from decouple import config
 
-from chat.models import Message, MessageImage
+from chat.models import Message, MessageImage, MessageLike
 from django.core.files.base import ContentFile
+from users.services import handle_user
+
+
+def get_message_by_id(message_id):
+    return Message.objects.get(pk=message_id)
 
 
 def get_file_instance_from_base64(base64_string: str):
@@ -40,6 +45,22 @@ def edit(message_id, message_text, images):
                 )[0]
             )
     message.content = message_text
+    message.edited = True
     message.save()
 
     return message
+
+
+def get_likes_for_message(message_id):
+    return MessageLike.objects.filter(message__id=message_id)
+
+
+def delete_message_like(message_id, user):
+    MessageLike.objects.filter(
+        message__id=message_id, user=handle_user.get_user_by_username(user)
+    ).delete()
+
+
+def get_message_parent(parentId):
+    if parentId:
+        return get_message_by_id(parentId)
