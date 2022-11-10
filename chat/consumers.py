@@ -122,12 +122,18 @@ class ChatConsumer(JsonWebsocketConsumer):
         if message_type == "chat_message":
             print("chat_message")
 
+            conversation = (
+                handle_chat.get_conversation_by_name(content["conversation_name"])
+                or self.conversation
+            )
+
             message = Message.objects.create(
                 from_user=self.user,
                 to_user=self.get_receiver(),
                 content=content["message"],
-                conversation=self.conversation,
+                conversation=conversation,
                 parent=handle_chat.get_message_parent(content.get("parent")),
+                forwarded=content["forwarded"],
             )
             if content["filesBase64"]:
                 for elem in content["filesBase64"]:
@@ -139,7 +145,7 @@ class ChatConsumer(JsonWebsocketConsumer):
                 message.save()
 
             async_to_sync(self.channel_layer.group_send)(
-                self.conversation_name,
+                conversation.name,
                 {
                     "type": "chat_message_echo",
                     "name": self.user.username,
@@ -151,7 +157,7 @@ class ChatConsumer(JsonWebsocketConsumer):
                 "conversations",
                 {
                     "type": "new_unread_message",
-                    "name": self.conversation.name,
+                    "name": conversation.name,
                     "from_user": self.user.username,
                     "message": MessageSerializer(message).data,
                 },

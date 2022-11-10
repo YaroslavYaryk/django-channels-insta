@@ -44,6 +44,7 @@ class MessageSerializer(serializers.ModelSerializer):
             "timestamp",
             "read",
             "edited",
+            "forwarded",
             "likes",
             "parent",
         )

@@ -59,7 +59,7 @@ class MessageAPIView(ListAPIView):
         )
         return queryset
 
-    def get(self, request):
-        queryset = self.get_queryset()
-        serializer = MessageSerializer(queryset, many=True)
-        return Response(serializer.data)
+    # def get(self, request):
+    #     queryset = self.get_queryset()
+    #     serializer = MessageSerializer(queryset, many=True)
+    #     return Response(serializer.data)

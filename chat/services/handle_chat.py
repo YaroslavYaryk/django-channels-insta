@@ -1,7 +1,7 @@
 import base64
 from decouple import config
 
-from chat.models import Message, MessageImage, MessageLike
+from chat.models import Message, MessageImage, MessageLike, Conversation
 from django.core.files.base import ContentFile
 from users.services import handle_user
 
@@ -64,3 +64,10 @@ def delete_message_like(message_id, user):
 def get_message_parent(parentId):
     if parentId:
         return get_message_by_id(parentId)
+
+
+def get_conversation_by_name(name):
+    if name:
+        print(Conversation.objects.get(name=name))
+        return Conversation.objects.get(name=name)
+    print("no Name")

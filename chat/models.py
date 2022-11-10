@@ -46,6 +46,7 @@ class Message(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     read = models.BooleanField(default=False)
     edited = models.BooleanField(default=False)
+    forwarded = models.BooleanField(default=False)
 
     parent = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True)
 
