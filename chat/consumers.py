@@ -45,6 +45,7 @@ class ChatConsumer(JsonWebsocketConsumer):
             f"{self.scope['url_route']['kwargs']['conversation_name']}"
         )
         participants = self.conversation_name.split("__")
+        print(participants)
         if participants[0] != participants[1]:
             self.conversation, created = Conversation.objects.get_or_create(
                 name=self.conversation_name
@@ -79,6 +80,15 @@ class ChatConsumer(JsonWebsocketConsumer):
                 "type": "last_30_messages",
                 "messages": MessageSerializer(messages, many=True).data,
                 "has_more": message_count > 30,
+            }
+        )
+
+        self.send_json(  # only for mobile
+            {
+                "type": "all_messages",
+                "messages": MessageSerializer(
+                    self.conversation.messages.all().order_by("-timestamp"), many=True
+                ).data,
             }
         )
 
@@ -245,8 +255,18 @@ class ChatConsumer(JsonWebsocketConsumer):
                         "message": MessageSerializer(message).data,
                     },
                 )
+
             except:
                 pass
+            async_to_sync(self.channel_layer.group_send)(
+                "conversations",
+                {
+                    "type": "delete_last_unread",
+                    "name": self.conversation.name,
+                    "from_user": self.user.username,
+                    "message": MessageSerializer(message).data,
+                },
+            )
 
         if message_type == "edit_message":
             message_id = content["messageId"]
@@ -335,6 +355,9 @@ class ChatConsumer(JsonWebsocketConsumer):
         self.send_json(event)
 
     def delete_message(self, event):
+        self.send_json(event)
+
+    def delete_last_unread(self, event):
         self.send_json(event)
 
     def edit_message(self, event):
@@ -478,6 +501,9 @@ class ConversationConsumer(JsonWebsocketConsumer):
         self.send_json(event)
 
     def change_last_message(self, event):
+        self.send_json(event)
+
+    def delete_last_unread(self, event):
         self.send_json(event)
 
 

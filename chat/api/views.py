@@ -63,3 +63,25 @@ class MessageAPIView(ListAPIView):
     #     queryset = self.get_queryset()
     #     serializer = MessageSerializer(queryset, many=True)
     #     return Response(serializer.data)
+
+
+class MessageListAPIView(ListAPIView):
+    pagination_class = MessagePagination
+    serializer_class = MessageSerializer
+
+    def get_queryset(self):
+        print("here")
+        conversation_name = self.request.GET.get("conversation")
+        queryset = (
+            Message.objects.filter(
+                conversation__name__contains=self.request.user.username,
+            )
+            .filter(conversation__name=conversation_name)
+            .order_by("-timestamp")
+        )
+        return queryset
+
+    def get(self, request):
+        queryset = self.get_queryset()
+        serializer = MessageSerializer(queryset, many=True)
+        return Response(serializer.data)

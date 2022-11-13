@@ -1,5 +1,10 @@
 from django.urls import path
-from .views import ConversationAPIView, MessageAPIView, ConversationBaseAPIView
+from .views import (
+    ConversationAPIView,
+    MessageAPIView,
+    ConversationBaseAPIView,
+    MessageListAPIView,
+)
 
 urlpatterns = [
     path(
@@ -13,4 +18,5 @@ urlpatterns = [
         name="get_conversation_by_name",
     ),
     path("messages/", MessageAPIView.as_view(), name="get_messages_for_conversation"),
+    path("all_messages/", MessageListAPIView.as_view(), name="get_all_messages"),
 ]
