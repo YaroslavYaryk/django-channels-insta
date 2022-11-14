@@ -67,6 +67,7 @@ def get_message_parent(parentId):
 
 
 def get_conversation_by_name(name):
+    print(name, "name")
     if name:
         print(Conversation.objects.get(name=name))
         return Conversation.objects.get(name=name)

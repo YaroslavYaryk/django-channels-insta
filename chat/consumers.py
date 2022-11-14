@@ -83,15 +83,6 @@ class ChatConsumer(JsonWebsocketConsumer):
             }
         )
 
-        self.send_json(  # only for mobile
-            {
-                "type": "all_messages",
-                "messages": MessageSerializer(
-                    self.conversation.messages.all().order_by("-timestamp"), many=True
-                ).data,
-            }
-        )
-
     def disconnect(self, code):
 
         # if self.user.is_authenticated:  # send the leave event to the room
