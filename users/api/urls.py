@@ -4,6 +4,7 @@ from .views import (
     CreateUserAPIView,
     LogoutUserAPIView,
     UserAPIView,
+    UserDetailsAPIView,
 )
 
 urlpatterns = [
@@ -13,4 +14,6 @@ urlpatterns = [
     path("auth/logout/", LogoutUserAPIView.as_view(), name="auth_user_logout"),
     # users
     path("all/", UserAPIView.as_view(), name="get_all_users"),
+    path("one/", UserDetailsAPIView.as_view(), name="get_one_user"),
+    path("one/change/", UserDetailsAPIView.as_view(), name="change_one_user"),
 ]

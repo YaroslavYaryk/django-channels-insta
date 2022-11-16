@@ -85,3 +85,14 @@ class MessageListAPIView(ListAPIView):
         queryset = self.get_queryset()
         serializer = MessageSerializer(queryset, many=True)
         return Response(serializer.data)
+
+
+class MessageSingleAPIView(APIView):
+    def get(self, request, conversation_name, message_id):
+        # simply delete the token to force a login
+
+        queryset = Message.objects.filter(conversation__name=conversation_name).get(
+            id=message_id
+        )
+        serializer = MessageSerializer(queryset)
+        return Response(serializer.data)

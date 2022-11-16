@@ -9,6 +9,7 @@ from datetime import datetime
 from users.api.serializers import UserSerializer
 from .services import handle_chat
 from users.services import handle_user
+from decouple import config
 
 User = get_user_model()
 
@@ -138,11 +139,20 @@ class ChatConsumer(JsonWebsocketConsumer):
             )
             if content["filesBase64"]:
                 for elem in content["filesBase64"]:
-                    message.images.add(
-                        MessageImage.objects.get_or_create(
-                            image=handle_chat.get_file_instance_from_base64(elem["url"])
-                        )[0]
-                    )
+
+                    if config("HOST") in elem["url"]:
+                        new_image = MessageImage.objects.create()
+                        new_image.image.name = elem["url"].split("media/")[-1]
+                        new_image.save()
+                        message.images.add(new_image)
+                    else:
+                        message.images.add(
+                            MessageImage.objects.get_or_create(
+                                image=handle_chat.get_file_instance_from_base64(
+                                    elem["url"]
+                                )
+                            )[0]
+                        )
                 message.save()
 
             async_to_sync(self.channel_layer.group_send)(

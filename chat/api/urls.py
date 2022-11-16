@@ -4,6 +4,7 @@ from .views import (
     MessageAPIView,
     ConversationBaseAPIView,
     MessageListAPIView,
+    MessageSingleAPIView,
 )
 
 urlpatterns = [
@@ -19,4 +20,9 @@ urlpatterns = [
     ),
     path("messages/", MessageAPIView.as_view(), name="get_messages_for_conversation"),
     path("all_messages/", MessageListAPIView.as_view(), name="get_all_messages"),
+    path(
+        "messages/<conversation_name>/<message_id>/",
+        MessageSingleAPIView.as_view(),
+        name="get_single_message",
+    ),
 ]

@@ -50,3 +50,14 @@ class UserSerializer(serializers.ModelSerializer):
             return f"{config('HOST')}:{config('PORT')}{instance.image.url}"
         except:
             return None
+
+
+class UserPutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = (
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+        )
