@@ -73,7 +73,12 @@ class LogoutUserAPIView(APIView):
 
 class UserAPIView(APIView):
     def get_queryset(self):
-        queryset = get_user_model().objects.all().exclude(id=self.request.user.id)
+        queryset = (
+            get_user_model()
+            .objects.all()
+            .exclude(id=self.request.user.id)
+            .exclude(is_superuser=True)
+        )
         return queryset
 
     def get(self, request, format=None):
@@ -121,3 +126,14 @@ class UserDetailsAPIView(APIView):
             [el.title() for values in serializer.errors.values() for el in values]
         )
         return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserToWatchDetailsAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username, format=None):
+        # simply delete the token to force a login
+        queryset = handle_user.get_user_by_username(username)
+        serializer = UserSerializer(queryset)
+        return Response(serializer.data)

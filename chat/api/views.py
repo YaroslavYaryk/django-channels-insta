@@ -96,3 +96,11 @@ class MessageSingleAPIView(APIView):
         )
         serializer = MessageSerializer(queryset)
         return Response(serializer.data)
+
+
+class ConversationDeleteAPIView(APIView):
+    def delete(self, request, conversation_name, format=None):
+        # simply delete the token to force a login
+        instance = Conversation.objects.get(name=conversation_name)
+        instance.delete()
+        return Response({"message": "successful"})

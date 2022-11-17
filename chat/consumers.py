@@ -64,13 +64,28 @@ class ChatConsumer(JsonWebsocketConsumer):
             }
         )
 
-        # async_to_sync(self.channel_layer.group_send)(
-        #     self.conversation_name,
-        #     {
-        #         "type": "user_join",
-        #         "user": self.user.username,
-        #     },
-        # )
+        async_to_sync(self.channel_layer.group_send)(
+            "conversations",
+            {
+                "type": "new_conversation",
+            },
+        )
+
+        async_to_sync(self.channel_layer.group_send)(
+            self.conversation_name,
+            {
+                "type": "user_join",
+                "user": self.user.username,
+            },
+        )
+
+        async_to_sync(self.channel_layer.group_send)(
+            "conversations",
+            {
+                "type": "user_join",
+                "user": self.user.username,
+            },
+        )
 
         # self.conversation.online.add(self.user)
 
@@ -367,6 +382,9 @@ class ChatConsumer(JsonWebsocketConsumer):
     def message_like(self, event):
         self.send_json(event)
 
+    def new_conversation(self, event):
+        self.send_json(event)
+
     @classmethod
     def encode_json(cls, content):
         return json.dumps(content, cls=UUIDEncoder)
@@ -505,6 +523,9 @@ class ConversationConsumer(JsonWebsocketConsumer):
         self.send_json(event)
 
     def delete_last_unread(self, event):
+        self.send_json(event)
+
+    def new_conversation(self, event):
         self.send_json(event)
 
 
